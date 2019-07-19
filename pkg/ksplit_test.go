@@ -2,9 +2,9 @@ package pkg
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
@@ -481,6 +481,352 @@ spec:
 				},
 			},
 		},
+		{
+			name:      "subdir doc",
+			localPath: "/test",
+			wantErr:   false,
+			inputFiles: []fileStruct{
+				{
+					name: "/test/multidoc.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+`,
+				},
+				{
+					name: "/test/subdir/multidoc.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: subdir-jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: subdir-jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+`,
+				},
+			},
+			outputFiles: []fileStruct{
+				{
+					name: "/test/Deployment-jaeger-collector.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+`,
+				},
+				{
+					name: "/test/Service-jaeger-collector.yaml",
+					data: `
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+`,
+				},
+				{
+					name: "/test/subdir/Deployment-subdir-jaeger-collector.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: subdir-jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+`,
+				},
+				{
+					name: "/test/subdir/Service-subdir-jaeger-collector.yaml",
+					data: `
+apiVersion: v1
+kind: Service
+metadata:
+  name: subdir-jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+`,
+				},
+			},
+		},
+		{
+			name:      "crds",
+			localPath: "/test",
+			wantErr:   false,
+			inputFiles: []fileStruct{
+				{
+					name: "/test/multidoc.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+
+---
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: crontabs.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+
+---
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: test.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+`,
+				},
+			},
+			outputFiles: []fileStruct{
+				{
+					name: "/test/Deployment-jaeger-collector.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+`,
+				},
+				{
+					name: "/test/Service-jaeger-collector.yaml",
+					data: `
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+`,
+				},
+				{
+					name: "/test/CustomResourceDefinitions.yaml",
+					data: `
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: crontabs.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+
+---
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: test.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+`,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -499,14 +845,21 @@ spec:
 			}
 
 			// compare output FS
-			filesList, err := mockFs.ReadDir(tt.localPath)
+			var actualFileNames []string
+			err := mockFs.Walk("/", func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return errors.Wrapf(err, "walk path %q", path)
+				}
+				if !info.IsDir() {
+					actualFileNames = append(actualFileNames, path)
+				}
+				return nil
+			})
+
 			req.NoError(err, "read output dir %s", tt.localPath)
-			var expectedFileNames, actualFileNames []string
+			var expectedFileNames []string
 			for _, expectedFile := range tt.outputFiles {
 				expectedFileNames = append(expectedFileNames, expectedFile.name)
-			}
-			for _, actualFile := range filesList {
-				actualFileNames = append(actualFileNames, filepath.Join(tt.localPath, actualFile.Name()))
 			}
 
 			req.ElementsMatch(expectedFileNames, actualFileNames, "comparing expected and actual output files, expected %+v got %+v", expectedFileNames, actualFileNames)
