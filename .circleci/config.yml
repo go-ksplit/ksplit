@@ -1,0 +1,24 @@
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@1.0.5
+jobs:
+  test:
+    docker:
+    - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/go-ksplit/ksplit
+    steps:
+    - checkout
+    - run:
+        name: go test
+        command: |
+          make citest
+    - codecov/upload:
+        file: .state/coverage.out
+
+workflows:
+  version: 2
+
+  unstable:
+    jobs:
+    - test
