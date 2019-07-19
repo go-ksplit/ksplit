@@ -9,5 +9,4 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.2.2
 	gopkg.in/laverya/yaml.v3 v3.0.0-beta2
-	gopkg.in/yaml.v3 v3.0.0-20190709130402-674ba3eaed22 // indirect
 )
