@@ -1,5 +1,14 @@
 {
   "extends": [
     "config:base"
-  ]
+  ],
+  "patch": {
+    "automerge": true
+  },
+  "prHourlyLimit": 60,
+  "postUpdateOptions": ["gomodTidy"],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["@laverya"]
+  }
 }
