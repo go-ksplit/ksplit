@@ -8,5 +8,5 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/testify v1.3.0
-	gopkg.in/laverya/yaml.v3 v3.0.0-beta2
+	gopkg.in/laverya/yaml.v3 v3.0.0-beta3
 )
