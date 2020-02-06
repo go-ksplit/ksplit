@@ -522,9 +522,17 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 		info := fieldInfo{Num: i}
 
 		tag := field.Tag.Get("yaml")
-		if tag == "" && strings.Index(string(field.Tag), ":") < 0 {
+		if tag == "" && !strings.Contains(string(field.Tag), ":") {
 			tag = string(field.Tag)
 		}
+		// compatible with only json-tag
+		if tag == "" {
+			tag = field.Tag.Get("json")
+			if tag == "" && !strings.Contains(string(field.Tag), ":") {
+				tag = string(field.Tag)
+			}
+		}
+
 		if tag == "-" {
 			continue
 		}
