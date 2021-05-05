@@ -108,7 +108,7 @@ func MaybeSplitMultidocYaml(fs afero.Afero, localPath string, combineNonCRDs boo
 		for _, outputFile := range allOutputFiles {
 			allOutputStrings = append(allOutputStrings, outputFile.contents)
 		}
-		nonCrdsFile := outputYaml{contents: strings.Join(allOutputStrings, "\n---\n"), name: "AllResorces"}
+		nonCrdsFile := outputYaml{contents: strings.Join(allOutputStrings, "\n---\n"), name: "AllResources"}
 		allOutputFiles = []outputYaml{nonCrdsFile}
 	}
 
