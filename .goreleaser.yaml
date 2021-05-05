@@ -1,7 +1,7 @@
 project_name: ksplit
 release:
   github:
-    owner: ksplit
+    owner: go-ksplit
     name: ksplit
   prerelease: auto
 builds:
