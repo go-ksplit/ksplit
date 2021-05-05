@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/go-ksplit/ksplit/pkg"
+	"github.com/go-ksplit/ksplit/pkg/splitter"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,7 +23,7 @@ func AllSplitCmd() *cobra.Command {
 				return errors.New("Please supply a directory")
 			}
 
-			err := pkg.MaybeSplitMultidocYamlFs(args[0])
+			err := splitter.MaybeSplitMultidocYamlFs(args[0])
 			if err != nil {
 				return errors.Wrap(err, "allsplit cmd")
 			}
