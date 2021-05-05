@@ -24,6 +24,7 @@ func RootCmd() *cobra.Command {
 
 	cmd.AddCommand(cmd2.CrdSplitCmd())
 	cmd.AddCommand(cmd2.AllSplitCmd())
+	cmd.AddCommand(cmd2.Version())
 
 	_ = viper.BindPFlags(cmd.Flags())
 	_ = viper.BindPFlags(cmd.PersistentFlags())
