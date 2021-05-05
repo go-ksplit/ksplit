@@ -14,8 +14,9 @@ import (
 )
 
 type outputYaml struct {
-	name     string
-	contents string
+	name         string
+	contents     string
+	overridePath string
 }
 
 type MinimalK8sYaml struct {
@@ -36,19 +37,30 @@ type ListK8sYaml struct {
 
 func MaybeSplitMultidocYamlFs(localpath string) error {
 	fs := afero.NewOsFs()
-	return MaybeSplitMultidocYaml(afero.Afero{Fs: fs}, localpath)
+	return MaybeSplitMultidocYaml(afero.Afero{Fs: fs}, localpath, false)
+}
+
+func MaybeSplitCRDsFs(localpath string) error {
+	fs := afero.NewOsFs()
+	return MaybeSplitMultidocYaml(afero.Afero{Fs: fs}, localpath, true)
 }
 
 // this function is not perfect, and has known limitations. One of these is that it does not account for `\n---\n` in multiline strings.
-func MaybeSplitMultidocYaml(fs afero.Afero, localPath string) error {
+func MaybeSplitMultidocYaml(fs afero.Afero, localPath string, combineNonCRDs bool) error {
 	files, err := fs.ReadDir(localPath)
 	if err != nil {
 		return errors.Wrapf(err, "read files in %s", localPath)
 	}
 
+	allOutputFiles := []outputYaml{}
+	allCrds := []string{}
+
 	for _, file := range files {
+		outputFiles := []outputYaml{}
+		crds := []string{}
+
 		if file.IsDir() {
-			if err := MaybeSplitMultidocYaml(fs, filepath.Join(localPath, file.Name())); err != nil {
+			if err := MaybeSplitMultidocYaml(fs, filepath.Join(localPath, file.Name()), combineNonCRDs); err != nil {
 				return err
 			}
 		}
@@ -63,9 +75,7 @@ func MaybeSplitMultidocYaml(fs afero.Afero, localPath string) error {
 			return errors.Wrapf(err, "read %s", filepath.Join(localPath, file.Name()))
 		}
 
-		outputFiles := []outputYaml{}
 		filesStrings := strings.Split(string(inFileBytes), "\n---\n")
-		crds := []string{}
 
 		// generate replacement yaml files
 		for idx, fileString := range filesStrings {
@@ -79,14 +89,8 @@ func MaybeSplitMultidocYaml(fs afero.Afero, localPath string) error {
 			crds = append(crds, newCRDs...)
 		}
 
-		if len(crds) > 0 {
-			crdsFile := outputYaml{contents: strings.Join(crds, "\n---\n"), name: "CustomResourceDefinitions"}
-			outputFiles = append(outputFiles, crdsFile)
-		}
-
-		if len(outputFiles) < 2 {
-			// not a multidoc yaml, or at least not a multidoc kubernetes yaml
-			continue
+		if len(outputFiles)+len(crds) <= 1 { // don't rename files if we don't have to
+			outputFiles[0].overridePath = file.Name()
 		}
 
 		// delete multidoc yaml file
@@ -95,12 +99,33 @@ func MaybeSplitMultidocYaml(fs afero.Afero, localPath string) error {
 			return errors.Wrapf(err, "unable to remove %s", filepath.Join(localPath, file.Name()))
 		}
 
-		// write replacement yaml
-		for _, outputFile := range outputFiles {
+		allOutputFiles = append(allOutputFiles, outputFiles...)
+		allCrds = append(allCrds, crds...)
+	}
+
+	if combineNonCRDs {
+		allOutputStrings := []string{}
+		for _, outputFile := range allOutputFiles {
+			allOutputStrings = append(allOutputStrings, outputFile.contents)
+		}
+		nonCrdsFile := outputYaml{contents: strings.Join(allOutputStrings, "\n---\n"), name: "AllResorces"}
+		allOutputFiles = []outputYaml{nonCrdsFile}
+	}
+
+	if len(allCrds) > 0 {
+		crdsFile := outputYaml{contents: strings.Join(allCrds, "\n---\n"), name: "CustomResourceDefinitions"}
+		allOutputFiles = append(allOutputFiles, crdsFile)
+	}
+
+	// write replacement yaml
+	for _, outputFile := range allOutputFiles {
+		if outputFile.overridePath != "" {
+			err = fs.WriteFile(filepath.Join(localPath, outputFile.overridePath), []byte(outputFile.contents), os.FileMode(0644))
+		} else {
 			err = fs.WriteFile(filepath.Join(localPath, outputFile.name+".yaml"), []byte(outputFile.contents), os.FileMode(0644))
-			if err != nil {
-				return errors.Wrapf(err, "write %s", outputFile.name)
-			}
+		}
+		if err != nil {
+			return errors.Wrapf(err, "write %s", outputFile.name)
 		}
 	}
 
