@@ -905,7 +905,7 @@ spec:
 			},
 			outputFiles: []fileStruct{
 				{
-					name: "/test/AllResorces.yaml",
+					name: "/test/AllResources.yaml",
 					data: `
 #A Test Comment
 apiVersion: extensions/v1beta1
