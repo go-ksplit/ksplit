@@ -16,11 +16,12 @@ func TestResolver_maybeSplitMultidocYaml(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		localPath   string
-		wantErr     bool
-		inputFiles  []fileStruct
-		outputFiles []fileStruct
+		name           string
+		localPath      string
+		wantErr        bool
+		combineNonCrds bool
+		inputFiles     []fileStruct
+		outputFiles    []fileStruct
 	}{
 		{
 			name:      "one doc",
@@ -301,11 +302,7 @@ metadata:
 			outputFiles: []fileStruct{
 				{
 					name: "/comment-before/account.yaml",
-					data: `
-# The service account, cluster roles, and cluster role binding are
-# only needed for Kubernetes with role-based access control (RBAC).
----
-apiVersion: v1
+					data: `apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
@@ -827,6 +824,162 @@ spec:
 				},
 			},
 		},
+		{
+			name:           "crds",
+			localPath:      "/test",
+			wantErr:        false,
+			combineNonCrds: true,
+			inputFiles: []fileStruct{
+				{
+					name: "/test/multidoc.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+
+---
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: crontabs.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+
+---
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: test.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+`,
+				},
+			},
+			outputFiles: []fileStruct{
+				{
+					name: "/test/AllResorces.yaml",
+					data: `
+#A Test Comment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-deployment
+  spec:
+    replicas: 1
+    strategy:
+      type: Recreate
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  labels:
+    app: jaeger
+    jaeger-infra: collector-service
+spec:
+  ports:
+  - name: jaeger-collector-tchannel
+    port: 14267
+    protocol: TCP
+    targetPort: 14267
+  - name: jaeger-collector-http
+    port: 14268
+    protocol: TCP
+    targetPort: 14268
+  - name: jaeger-collector-zipkin
+    port: 9411
+    protocol: TCP
+    targetPort: 9411
+  selector:
+    jaeger-infra: collector-pod
+  type: ClusterIP
+`,
+				},
+				{
+					name: "/test/CustomResourceDefinitions.yaml",
+					data: `
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: crontabs.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+
+---
+
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: test.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+`,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -840,7 +993,7 @@ spec:
 			}
 
 			// run split function
-			if err := MaybeSplitMultidocYaml(mockFs, tt.localPath); (err != nil) != tt.wantErr {
+			if err := MaybeSplitMultidocYaml(mockFs, tt.localPath, tt.combineNonCrds); (err != nil) != tt.wantErr {
 				t.Errorf("Resolver.maybeSplitMultidocYaml() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

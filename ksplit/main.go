@@ -1,15 +1,13 @@
-package ksplit
+package main
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/pkg/errors"
+	cmd2 "github.com/go-ksplit/ksplit/ksplit/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-
-	"github.com/go-ksplit/ksplit/pkg"
 )
 
 func main() {
@@ -20,28 +18,12 @@ func main() {
 }
 
 func RootCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:           "ksplit directory",
-		Short:         "split kubernetes yaml within a directory",
-		Long:          `ksplit reformats generated kubernetes yaml into a more easily readable file format`,
-		Example:       "ksplit myk8syamldir/",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				cmd.Help()
-				return errors.New("Please supply a directory")
-			}
-
-			err := pkg.MaybeSplitMultidocYamlFs(args[0])
-			if err != nil {
-				return errors.Wrap(err, "root cmd")
-			}
-			return nil
-		},
-	}
+	cmd := &cobra.Command{}
 
 	cmd.PersistentFlags().String("log-level", "off", "Log level")
+
+	cmd.AddCommand(cmd2.CrdSplitCmd())
+	cmd.AddCommand(cmd2.AllSplitCmd())
 
 	_ = viper.BindPFlags(cmd.Flags())
 	_ = viper.BindPFlags(cmd.PersistentFlags())
