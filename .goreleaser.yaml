@@ -1,0 +1,39 @@
+project_name: ksplit
+release:
+  github:
+    owner: ksplit
+    name: ksplit
+  prerelease: auto
+builds:
+- id: ksplit
+  goos:
+  - linux
+  - windows
+  - darwin
+  goarch:
+  - amd64
+  - "386"
+  - arm64
+  main: ksplit/main.go
+  ldflags: -s -w
+    -X github.com/go-ksplit/ksplit/pkg/version.version={{.Version}}
+    -X github.com/go-ksplit/ksplit/pkg/version.gitSHA={{.Commit}}
+    -X github.com/go-ksplit/ksplit/pkg/version.buildTime={{.Date}}
+  binary: ksplit
+  hooks: {}
+archives:
+- id: ksplit
+  builds:
+  - ksplit
+  format: tar.gz
+  name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}"
+  files:
+  - licence*
+  - LICENCE*
+  - license*
+  - LICENSE*
+  - readme*
+  - README*
+  - changelog*
+  - CHANGELOG*
+
