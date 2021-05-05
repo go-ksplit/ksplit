@@ -5,7 +5,7 @@ orbs:
 jobs:
   test:
     docker:
-    - image: circleci/golang:1.15
+    - image: circleci/golang:1.16
     working_directory: /go/src/github.com/go-ksplit/ksplit
     steps:
     - checkout
@@ -15,6 +15,10 @@ jobs:
           make citest
     - codecov/upload:
         file: .state/coverage.out
+    - run:
+        name: build
+        command: |
+          make build
 
 workflows:
   version: 2
