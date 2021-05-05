@@ -89,7 +89,7 @@ func MaybeSplitMultidocYaml(fs afero.Afero, localPath string, combineNonCRDs boo
 			crds = append(crds, newCRDs...)
 		}
 
-		if len(outputFiles)+len(crds) <= 1 { // don't rename files if we don't have to
+		if len(outputFiles) == 1 && len(crds) == 0 { // don't rename files if we don't have to
 			outputFiles[0].overridePath = file.Name()
 		}
 
