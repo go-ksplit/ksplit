@@ -1,6 +1,6 @@
 module github.com/go-ksplit/ksplit
 
-go 1.21.6
+go 1.22.2
 
 require (
 	github.com/pkg/errors v0.9.1
