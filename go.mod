@@ -5,7 +5,7 @@ go 1.21.6
 require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/afero v1.11.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.8.4
 	gopkg.in/laverya/yaml.v3 v3.0.0-beta5
