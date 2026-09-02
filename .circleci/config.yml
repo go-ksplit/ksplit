@@ -5,7 +5,7 @@ orbs:
 jobs:
   test:
     docker:
-    - image: cimg/go:1.25.7
+    - image: cimg/go:1.27.1
     working_directory: ~/ksplit
     steps:
     - checkout
